@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "tsx watch --env-file .env src/server.ts",
     "test:dev": "set NODE_OPTIONS=--experimental-vm-modules && npx jest --watchAll --runInBand",
-    "build": "tsup src --out-dir build --exclude src/tests",
+    "build": "tsup --out-dir build --entry src/app.ts --entry src/server.ts --entry src/env.ts",
     "start": "node build/server.js"
   },
   "author": "Heitor Brito",
