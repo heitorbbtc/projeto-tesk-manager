@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String         @id @default(uuid())
+  name        String
+  email       String         @unique
+  password    String
+  role        UserRole       @default(member)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  tasks       Task[]         @relation("AssignedUser")
+  changedTask TasksHistory[] @relation("ChangedFrom")
+  teams       TeamMembers[]  @relation("UserToTeams")
+
+  @@map("users")
+}
+
+model Team {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  tasks       Task[]        @relation("AssignedTeam")
+  teams       TeamMembers[] @relation("TeamToMembers")
+
+  @@map("teams")
+}
+
+model TeamMembers {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  teamId    String   @map("team_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  team      Team     @relation("TeamToMembers", fields: [teamId], references: [id])
+  user      User     @relation("UserToTeams", fields: [userId], references: [id])
+
+  @@map("team_members")
+}
+
+model Task {
+  id          String         @id @default(uuid())
+  title       String
+  description String
+  status      TaskRole       @default(pending)
+  priority    PriorityRole   @default(high)
+  assignedTo  String         @map("assigned_to")
+  teamId      String         @map("team_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  user        User           @relation("AssignedUser", fields: [assignedTo], references: [id])
+  team        Team           @relation("AssignedTeam", fields: [teamId], references: [id])
+  history     TasksHistory[] @relation("ReferenceTask")
+
+  @@map("task")
+}
+
+model TasksHistory {
+  id            String   @id @default(uuid())
+  taskId        String   @map("task_id")
+  changedBy     String   @map("changed_by")
+  oldStatus     TaskRole @map("old_status")
+  newStatus     TaskRole @map("new_status")
+  changedAt     DateTime @updatedAt @map("changed_at")
+  changedFrom   User     @relation("ChangedFrom", fields: [changedBy], references: [id])
+  referenceTask Task     @relation("ReferenceTask", fields: [taskId], references: [id])
+
+  @@map("tasks_history")
+}
+
+enum UserRole {
+  admin
+  member
+}
+
+enum TaskRole {
+  pending
+  in_progress
+  completed
+}
+
+enum PriorityRole {
+  high
+  medium
+  low
+}
